@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('imageInput').files = files;
+                previewImage(files[0]);
+            }
+        }
+
+        function previewImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('imagePreview').src = event.target.result;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function uploadImage() {
+            const input = document.getElementById('imageInput');
+            if (!input.files.length) {
+                alert("Please select an image first.");
+                return;
+            }
+            const file = input.files[0];
+            const format = document.getElementById('formatSelect').value;
+            const formData = new FormData();
+            formData.append("image", file);
+            formData.append("format", format);
+
+            fetch("/convert", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const link = document.getElementById('downloadLink');
+                link.href = URL.createObjectURL(blob);
+                link.download = `converted.${format}`;
+                link.classList.remove('hidden');
+                link.textContent = "Download Converted Image";
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-center">
+        <h2 class="text-xl font-bold mb-4">Image Converter</h2>
+        <div id="dropArea" class="mb-4 p-6 border-2 border-dashed border-gray-400 rounded cursor-pointer" ondrop="handleDrop(event)" ondragover="allowDrop(event)">
+            Drag & Drop Image Here or Click to Upload
+        </div>
+        <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="previewImage(this.files[0])">
+        <img id="imagePreview" class="hidden w-full mt-4 rounded" alt="Image Preview">
+        <select id="formatSelect" class="mb-4 w-full p-2 border rounded">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="webp">WEBP</option>
+        </select>
+        <button onclick="uploadImage()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Convert</button>
+        <a id="downloadLink" class="block mt-4 text-blue-500 hidden">Download Image</a>
+    </div>
+</body>
+</html>
