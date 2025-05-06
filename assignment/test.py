@@ -16,6 +16,7 @@ cars = cv2.imread('IMG_1601.jpeg')
 
 roi_points = []
 items = []
+segmentation_history = []
 
 def select_roi(event, x, y, flags, param):
     global roi_points
@@ -34,11 +35,29 @@ def select_roi(event, x, y, flags, param):
         # Calculate and print dimensions (in pixels)
         width = abs(roi_points[1][0] - roi_points[0][0])
         height = abs(roi_points[1][1] - roi_points[0][1])
+        segmentation_history.append((cars.copy(), roi_points.copy()))
         items.append((width, height))
         print(f'Width: {width} pixels, Height: {height} pixels')
+
+def undo_segmentation():
+    global roi_points
+    if len(segmentation_history) > 0:
+        cars, _ = segmentation_history.pop()
+        cv2.imshow('Image', cars)
+    else:
+        print('No ROI to undo.')
+
 cv2.namedWindow('Image')
 cv2.setMouseCallback('Image', select_roi)
 cv2.imshow('Image', cars)
+
+while True:
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('u'):
+        undo_segmentation()
+    elif key == ord('q'):
+        break
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 print(items)
